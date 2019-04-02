@@ -188,7 +188,56 @@ public class ReportFacadeREST extends AbstractFacade<Report> {
      
     
     
-    //Task 5.1
+
+    //5.1 Just Query the Report table
+    
+    @GET
+    @Path("CalReportOneDay2/{userId}/{date}")
+    @Produces("application/json")
+    public Object CalReportOneDay2(@PathParam("userId") int userId, @PathParam("date") String str) throws ParseException{
+        Date date = (Date) new SimpleDateFormat("yyyy-MM-dd").parse(str);
+        TypedQuery query = em.createQuery("SELECT r.calC,r.calB,(r.calG-r.calC+r.calB) FROM Report r WHERE r.reportPK.userId = :userId "
+                + "AND r.reportPK.date = :date",Object[].class);
+        query.setParameter("userId", userId);
+        query.setParameter("date", date);
+        List<Object[]> queryList = query.getResultList();
+        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+        for(Object[] row:queryList){
+            JsonObject oneDayReport  = Json.createObjectBuilder().add("CalConsumed",(int)row[0]).add("CalBurned", (int)row[1]).add("RemainCalorie", (int)row[2]).build();
+            arrayBuilder.add(oneDayReport);
+        }
+        JsonArray jArray = arrayBuilder.build();
+        return jArray;
+    }
+    
+    //5.2 Just Query the report table
+    @GET
+    @Path("CalReportPeriodTime2/{userId}/{startDate}/{endDate}")
+    @Produces("application/json")
+    public Object CalReportPeriodTime2(@PathParam("userId") int userId,@PathParam("startDate")String str1,@PathParam("endDate")String str2) throws ParseException{
+        int totalCalB = 0;
+        int totalCalC = 0;
+        int totalStep = 0;
+        Date startDate = (Date) new SimpleDateFormat("yyyy-MM-dd").parse(str1);
+        Date endDate = (Date) new SimpleDateFormat("yyyy-MM-dd").parse(str2);
+        TypedQuery query = em.createQuery("SELECT r.calB,r.calC,r.totalStep FROM Report r WHERE r.reportPK.userId = :userId "
+                + "AND r.reportPK.date BETWEEN :startDate and :endDate",Object[].class);
+        query.setParameter("userId", userId);
+        query.setParameter("startDate", startDate);
+        query.setParameter("endDate", endDate);
+        List<Object[]> queryList = query.getResultList();
+        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+        for(Object[] row:queryList){
+            totalCalB += (int)row[0];
+            totalCalC += (int)row[1];
+            totalStep += (int)row[2];
+        }
+        JsonObject periodReport  = Json.createObjectBuilder().add("CalConsumed",totalCalB).add("CalBurned", totalCalC).add("totalSteps", totalStep).build();
+        return periodReport;
+    }
+    
+    
+        //Task 5.1.2 Get values using EJB
     @GET
     @Path("CalReportOneDay/{userId}/{date}")
     @Produces("application/json")
@@ -207,8 +256,10 @@ public class ReportFacadeREST extends AbstractFacade<Report> {
         JsonObject oneDayReport = Json.createObjectBuilder().add("totalCalC",totalCalc).add("totalCalB",totalCalb).add("remainCal",remainCal).build();       
         return oneDayReport;
     }
+        
+        
     
-    //Task 5.2
+    //Task 5.2.2 Get values using EJB
     @GET
     @Path("CalReportPeriodTime/{userId}/{startDate}/{endDate}")
     @Produces("application/json")
@@ -242,9 +293,6 @@ public class ReportFacadeREST extends AbstractFacade<Report> {
     }
     
     
-    
-    
-
     
    
 
