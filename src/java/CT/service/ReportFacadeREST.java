@@ -207,7 +207,8 @@ public class ReportFacadeREST extends AbstractFacade<Report> {
             arrayBuilder.add(oneDayReport);
         }
         JsonArray jArray = arrayBuilder.build();
-        return jArray;
+        JsonObject result = (JsonObject) jArray.get(0);
+        return result;
     }
     
     //5.2 Just Query the report table
@@ -235,6 +236,33 @@ public class ReportFacadeREST extends AbstractFacade<Report> {
         JsonObject periodReport  = Json.createObjectBuilder().add("CalConsumed",totalCalB).add("CalBurned", totalCalC).add("totalSteps", totalStep).build();
         return periodReport;
     }
+    // RETURN every day 
+    @GET
+    @Path("CalReportPeriodTimePerDay/{userId}/{startDate}/{endDate}")
+    @Produces("application/json")
+    public Object CalReportPeriodTimePerDay(@PathParam("userId") int userId,@PathParam("startDate")String str1,@PathParam("endDate")String str2) throws ParseException{
+        int totalCalB = 0;
+        int totalCalC = 0;
+        int totalStep = 0;
+        Date startDate = (Date) new SimpleDateFormat("yyyy-MM-dd").parse(str1);
+        Date endDate = (Date) new SimpleDateFormat("yyyy-MM-dd").parse(str2);
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); 
+        TypedQuery query = em.createQuery("SELECT r.calB,r.calC,r.totalStep, r.reportPK.date FROM Report r WHERE r.reportPK.userId = :userId "
+                + "AND r.reportPK.date BETWEEN :startDate and :endDate",Object[].class);
+        query.setParameter("userId", userId);
+        query.setParameter("startDate", startDate);
+        query.setParameter("endDate", endDate);
+        List<Object[]> queryList = query.getResultList();
+        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+        for(Object[] row:queryList){
+            String strDate = dateFormat.format(row[3]);
+            JsonObject oneDayReport  = Json.createObjectBuilder().add("CalBurned",(int)row[0]).add("CalConsumed", (int)row[1]).add("Date", (String)strDate).build();
+            arrayBuilder.add(oneDayReport);   
+        }
+        JsonArray jArray = arrayBuilder.build();
+        return jArray;
+    }
+    
     
     
         //Task 5.1.2 Get values using EJB
